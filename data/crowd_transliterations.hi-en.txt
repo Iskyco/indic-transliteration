@@ -6934,7 +6934,7 @@ angarika	अंगारिका
 richtersveld	रिचस्ट्रेसवेल्ड
 chand	चान्द
 il	इल
-potosí	पोतोसी
+potosi	पोतोसी
 natra	नटराज
 lance	लैन्स
 klusener	क्लूजनर
@@ -10554,8 +10554,6 @@ truckin	ट्रकिन
 trethewey	ट्रेथवे
 cord	डोरी
 goodwin	गुडविन
-kॅbet	एक्टीसल्:कॅबेट
-डॅम्प्सकीबेसेल्सकॅबेट	डॅम्प्सकीबेसेल्सकॅबेट
 suparn	सुपर्ण
 surdas	सूरदास
 david	डेविड
@@ -10600,7 +10598,6 @@ a	बड़ी
 mother	माँ
 indraprastha	इंद्रप्रस्थ
 jogi	जोगी
-ऐ	ऐध
 me	मुझे
 word	वचन
 two	दो
@@ -14403,7 +14400,6 @@ telefilms	टेलीफ़िल्म्स
 gaetane	गाएतेन
 ekavali	एकावली
 armand	अरमंड
-hॅmr	हॅमर
 oregon	ओरेगन
 rohanlal	रोहनलाल
 absconding	फरार
