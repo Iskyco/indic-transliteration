@@ -59,6 +59,7 @@ def batch_generator(pairs, en_dict, hi_dict, batch_size, bucket):
     for i in range(0, len(pairs)-batch_size, batch_size):
         X = [word_to_char_ids(word_pair[0], en_dict, bucket[0])
                 for word_pair in pairs[i:i+batch_size]]
+        [x.reverse() for x in X]
         
         Y = [word_to_char_ids(word_pair[1], hi_dict, bucket[1])
                 for word_pair in pairs[i:i+batch_size]]
@@ -143,7 +144,7 @@ def train_seq2seq():
                     outs_soft = sess.run(dec_outputs, feed_dict)
                     outs = np.array([logits_t.argmax(axis=1) for logits_t in outs_soft])
                     for j in range(10):
-                        print('\t', ''.join([en_chars[x] for x in X[:,j] if x>3]) , ' : ', 
+                        print('\t', ''.join(reversed([en_chars[x] for x in X[:,j] if x>3])) , ' : ', 
                               ''.join([hi_chars[x] for x in outs[:,j] if x>3]))
                 
                 step = step + 1
