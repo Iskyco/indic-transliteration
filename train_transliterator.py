@@ -25,64 +25,19 @@ def get_transliteration_pairs(file_name):
 
     return en_hi_pairs
 
-def get_char_vocab(script):
-    """
-    Returns char lookup list and dict for specified script.
-    script can be one of 'devanagari' or 'latin'
-    """
-    if script=='devanagari':
-        chars = _START_CHARS + list(map(chr, range(0x900, 0x97F)))
-    else:
-        chars = _START_CHARS + list(string.ascii_letters)
-
-    chars_dict = {x:i for i,x in enumerate(chars)}
-    return chars, chars_dict
-
-def word_to_char_ids(word, char_dict, length=15):
-    """
-    Given a word and char_dict, returns list of ids padding to required length
-    Characters not in char_dict are given id=unk_id
-    """
-    char_ids = [char_dict.get(x, UNK_ID) for x in word] + [EOS_ID]
-    if len(char_ids) < length:
-        char_ids += [PAD_ID]*(length-len(char_ids))
-    
-    return char_ids
-
-def batch_generator(pairs, en_dict, hi_dict, batch_size, bucket):
-    """
-    Generates batches of data from pairs. bucket is pair of two integers 
-    which will be used to pad the pairs
-    """
-    np.random.shuffle(pairs)
-    
-    for i in range(0, len(pairs)-batch_size, batch_size):
-        X = [word_to_char_ids(word_pair[0], en_dict, bucket[0])
-                for word_pair in pairs[i:i+batch_size]]
-        [x.reverse() for x in X]
-        
-        Y = [word_to_char_ids(word_pair[1], hi_dict, bucket[1])
-                for word_pair in pairs[i:i+batch_size]]
-        
-        X = np.array(X).T
-        Y = np.array(Y).T
-        
-        yield X,Y
-
 
 class Transliterator(object):
     """docstring for Transliterator"""
-    def __init__(self, en_hi_pairs, bucket=(16,16), embedding_dim=50, 
-                                            memory_dim=100, num_layers=1):
+    def __init__(self, en_hi_pairs, bucket=(16,16), embedding_dim=50, memory_dim=100, num_layers=1):
         """
         Create tensorflow model for 
         """
         # Get data and Remove pairs not fitting in buckets
         self.en_hi_pairs = en_hi_pairs
-        self.en_hi_pairs = [x for x in en_hi_pairs if len(x[0])+1 < bucket[0] 
+        self.en_hi_pairs = [x for x in self.en_hi_pairs if len(x[0])+1 < bucket[0] 
                                                  and len(x[1])+1 < bucket[1]]
-        self.en_chars, self.en_dict = get_char_vocab('latin')
-        self.hi_chars, self.hi_dict = get_char_vocab('devanagari')
+        self.en_chars, self.en_dict = self.get_char_vocab('latin')
+        self.hi_chars, self.hi_dict = self.get_char_vocab('devanagari')
 
         self.bucket = bucket
         self.embedding_dim = embedding_dim
@@ -91,7 +46,6 @@ class Transliterator(object):
 
         #create_model creates tensorflow graphs
         self.create_model()
-
 
     def create_model(self):
         """
@@ -125,6 +79,51 @@ class Transliterator(object):
                         self.enc_inp, self.dec_inp, self.cell, len(self.en_chars), 
                                         len(self.hi_chars) ,self.embedding_dim)
 
+    @staticmethod
+    def word_to_char_ids(word, char_dict, length=15):
+        """
+        Given a word and char_dict, returns list of ids padding to required length
+        Characters not in char_dict are given id=unk_id
+        """
+        char_ids = [char_dict.get(x, UNK_ID) for x in word] + [EOS_ID]
+        if len(char_ids) < length:
+            char_ids += [PAD_ID]*(length-len(char_ids))
+        
+        return char_ids
+
+    @staticmethod
+    def get_char_vocab(script):
+        """
+        Returns char lookup list and dict for specified script.
+        script can be one of 'devanagari' or 'latin'
+        """
+        if script=='devanagari':
+            chars = _START_CHARS + list(map(chr, range(0x900, 0x97F)))
+        else:
+            chars = _START_CHARS + list(string.ascii_letters)
+
+        chars_dict = {x:i for i,x in enumerate(chars)}
+        return chars, chars_dict
+
+    def data_generator(self, pairs, batch_size, bucket):
+        """
+        Generates batches of data from pairs. bucket is pair of two integers 
+        which will be used to pad the pairs
+        """
+        np.random.shuffle(pairs)
+        
+        for i in range(0, len(pairs)-batch_size, batch_size):
+            X = [self.word_to_char_ids(word_pair[0], self.en_dict, bucket[0])
+                    for word_pair in pairs[i:i+batch_size]]
+            [x.reverse() for x in X]
+            
+            Y = [self.word_to_char_ids(word_pair[1], self.hi_dict, bucket[1])
+                    for word_pair in pairs[i:i+batch_size]]
+            
+            X = np.array(X).T
+            Y = np.array(Y).T
+            
+            yield X,Y
 
     def train(self, learning_rate=0.05, momentum=0.9, batch_size=64, num_epochs=100):
         """
@@ -149,7 +148,7 @@ class Transliterator(object):
             step = 0
             for i in range(num_epochs):
                 print("Epoch: ",i)
-                for X, Y in batch_generator(self.en_hi_pairs, self.en_dict, self.hi_dict, batch_size, self.bucket):
+                for X, Y in self.data_generator(self.en_hi_pairs, batch_size, self.bucket):
                     feed_dict = {self.enc_inp[t]: X[t] for t in range(self.bucket[0])}
                     feed_dict.update({self.labels[t]: Y[t] for t in range(self.bucket[1])})
                     
